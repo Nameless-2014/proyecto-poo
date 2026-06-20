@@ -1,12 +1,13 @@
 import wx
+import os
 
 
 class SplashScreen(wx.Frame):
     """
     Pantalla de inicio de RepairDesk.
 
-    Se muestra durante unos segundos antes de abrir
-    la ventana principal de la aplicación.
+    Muestra una imagen de presentación antes
+    de abrir la ventana principal.
     """
 
     def __init__(self):
@@ -14,74 +15,148 @@ class SplashScreen(wx.Frame):
         super().__init__(
             parent=None,
             title="RepairDesk",
-            size=(450, 250)
+
+            # Ventana sin bordes
+            style=wx.FRAME_NO_TASKBAR
+            | wx.STAY_ON_TOP
+            | wx.BORDER_NONE
         )
 
         # Panel principal
         panel = wx.Panel(self)
 
-        # Contenedor principal
+        # Fondo negro por si la imagen tarda en cargar
+        panel.SetBackgroundColour(wx.BLACK)
+
+        # --------------------------------------------------
+        # Ruta absoluta de la carpeta Proyecto_POO
+        # --------------------------------------------------
+
+        ruta_base = os.path.dirname(
+            os.path.dirname(
+                os.path.abspath(__file__)
+            )
+        )
+
+        # --------------------------------------------------
+        # Ruta de la imagen splash
+        # --------------------------------------------------
+
+        ruta_imagen = os.path.join(
+            ruta_base,
+            "assets",
+            "RepairDeskSplash.png"
+        )
+
+        # --------------------------------------------------
+        # Verificación para depuración
+        # --------------------------------------------------
+
+        print(f"[Splash] Imagen: {ruta_imagen}")
+        print(f"[Splash] Existe: {os.path.exists(ruta_imagen)}")
+
+        # --------------------------------------------------
+        # Si la imagen no existe
+        # --------------------------------------------------
+
+        if not os.path.exists(ruta_imagen):
+
+            mensaje = wx.StaticText(
+                panel,
+                label="No se encontró RepairDeskSplash.png"
+            )
+
+            sizer_error = wx.BoxSizer(wx.VERTICAL)
+
+            sizer_error.AddStretchSpacer()
+
+            sizer_error.Add(
+                mensaje,
+                0,
+                wx.ALIGN_CENTER
+            )
+
+            sizer_error.AddStretchSpacer()
+
+            panel.SetSizer(sizer_error)
+
+            self.Centre()
+
+            return
+
+        # --------------------------------------------------
+        # Cargar imagen
+        # --------------------------------------------------
+
+        imagen = wx.Image(
+            ruta_imagen,
+            wx.BITMAP_TYPE_PNG
+        )
+
+        # --------------------------------------------------
+        # Tamaño original de la imagen
+        # --------------------------------------------------
+
+        ancho = imagen.GetWidth()
+        alto = imagen.GetHeight()
+
+        print(
+            f"[Splash] Imagen original: {ancho}x{alto}"
+        )
+
+        # --------------------------------------------------
+        # Escalar manteniendo proporción
+        # --------------------------------------------------
+
+        ancho_maximo = 700
+        alto_maximo = 400
+
+        factor = min(
+            ancho_maximo / ancho,
+            alto_maximo / alto
+        )
+
+        nuevo_ancho = int(ancho * factor)
+        nuevo_alto = int(alto * factor)
+
+        imagen = imagen.Scale(
+            nuevo_ancho,
+            nuevo_alto,
+            wx.IMAGE_QUALITY_HIGH
+        )
+
+        # --------------------------------------------------
+        # Crear bitmap
+        # --------------------------------------------------
+
+        bitmap = wx.StaticBitmap(
+            panel,
+            wx.ID_ANY,
+            wx.Bitmap(imagen)
+        )
+
+        # --------------------------------------------------
+        # Layout principal
+        # --------------------------------------------------
+
         sizer = wx.BoxSizer(wx.VERTICAL)
 
-        # Título de la aplicación
-        titulo = wx.StaticText(
-            panel,
-            label="RepairDesk"
-        )
-
-        # Configurar fuente del título
-        fuente_titulo = titulo.GetFont()
-        fuente_titulo.SetPointSize(20)
-        fuente_titulo.SetWeight(wx.FONTWEIGHT_BOLD)
-
-        titulo.SetFont(fuente_titulo)
-
-        # Subtítulo
-        subtitulo = wx.StaticText(
-            panel,
-            label="Sistema de Gestión de Reparaciones"
-        )
-
-        # Texto de carga
-        texto_carga = wx.StaticText(
-            panel,
-            label="Cargando..."
-        )
-
-        # Espacio superior
-        sizer.AddStretchSpacer()
-
-        # Agregar título
         sizer.Add(
-            titulo,
-            0,
-            wx.ALIGN_CENTER
+            bitmap,
+            1,
+            wx.ALIGN_CENTER | wx.ALL,
+            0
         )
 
-        # Agregar subtítulo
-        sizer.Add(
-            subtitulo,
-            0,
-            wx.ALIGN_CENTER | wx.TOP,
-            10
-        )
-
-        # Agregar texto de carga
-        sizer.Add(
-            texto_carga,
-            0,
-            wx.ALIGN_CENTER | wx.TOP,
-            25
-        )
-
-        # Espacio inferior
-        sizer.AddStretchSpacer()
-
-        # Asociar sizer al panel
         panel.SetSizer(sizer)
 
-        # Recalcular distribución visual
-        panel.Layout()
+        # --------------------------------------------------
+        # Ajustar tamaño real de la ventana
+        # --------------------------------------------------
 
-        # Centrar ventana en pantalla
+        self.SetClientSize(
+            (nuevo_ancho, nuevo_alto)
+        )
+
+        # Centrar splash
         self.Centre()
