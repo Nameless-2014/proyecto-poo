@@ -1,5 +1,5 @@
 import wx
-
+import os  
 # Reutilizamos las vistas y moldes originales de mi compañero
 from views.nueva_reparacion_dialog import NuevaReparacionDialog
 from models.reparacion import Reparacion
@@ -16,6 +16,11 @@ class MainFrame(wx.Frame):
 
     def __init__(self):
         super().__init__(parent=None, title="RepairDesk", size=(900, 600))
+
+        # NUEVO: icono de la app
+        base_path = os.path.dirname(os.path.abspath(__file__))
+        icon_path = os.path.join(base_path, "..", "assets", "IcoDesk.ico")
+        self.SetIcon(wx.Icon(icon_path, wx.BITMAP_TYPE_ICO))
 
         self.crear_menu()
         
