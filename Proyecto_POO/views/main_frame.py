@@ -1,11 +1,8 @@
 import wx
 import os  
-# Reutilizamos las vistas y moldes originales de mi compañero
 from views.nueva_reparacion_dialog import NuevaReparacionDialog
 from models.reparacion import Reparacion
 from views.detalle_reparacion_frame import DetalleReparacionFrame
-
-# NUEVO: Importamos el motor de base de datos que armamos
 from db_manager import DatabaseManager
 
 class MainFrame(wx.Frame):
@@ -17,17 +14,13 @@ class MainFrame(wx.Frame):
     def __init__(self):
         super().__init__(parent=None, title="RepairDesk", size=(900, 600))
 
-        # NUEVO: icono de la app
         base_path = os.path.dirname(os.path.abspath(__file__))
         icon_path = os.path.join(base_path, "..", "assets", "IcoDesk.ico")
         self.SetIcon(wx.Icon(icon_path, wx.BITMAP_TYPE_ICO))
 
         self.crear_menu()
         
-        # NUEVO: Inicializamos la conexión a la base de datos local
         self.db = DatabaseManager()
-        
-        # MODIFICADO: En vez de arrancar con self.reparaciones = [], traemos el historial real de SQLite
         self.reparaciones = self.db.obtener_todas_reparaciones()
 
         panel = wx.Panel(self)
@@ -37,23 +30,19 @@ class MainFrame(wx.Frame):
         fuente = wx.Font(12, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
         titulo.SetFont(fuente)
 
-        # NUEVO: Agregamos la barra de búsqueda para cumplir con los requisitos
         self.txt_buscar = wx.SearchCtrl(panel, style=wx.TE_PROCESS_ENTER)
         self.txt_buscar.SetDescriptiveText("Buscar por cliente, equipo o serie...")
         self.txt_buscar.Bind(wx.EVT_TEXT, self.on_buscar)
 
-        # REQUISITO LISTCTRL: Tabla principal de reparaciones (Mantenemos la de mi compañero)
         self.lista = wx.ListCtrl(panel, style=wx.LC_REPORT | wx.BORDER_SUNKEN)
         self.lista.InsertColumn(0, "Orden", width=120)
         self.lista.InsertColumn(1, "Cliente", width=180)
         self.lista.InsertColumn(2, "Equipo", width=180)
         self.lista.InsertColumn(3, "Estado", width=120)
 
-        # NUEVO: Llenamos la tabla con lo que recuperamos de la base de datos
         for rep in self.reparaciones:
             self.agregar_reparacion_lista(rep)
 
-        # Organización visual (sumamos el buscador al medio)
         sizer.Add(titulo, 0, wx.ALL, 10)
         sizer.Add(self.txt_buscar, 0, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         sizer.Add(self.lista, 1, wx.EXPAND | wx.ALL, 10)
@@ -61,16 +50,16 @@ class MainFrame(wx.Frame):
         panel.SetSizer(sizer)
 
         self.lista.Bind(wx.EVT_LIST_ITEM_ACTIVATED, self.on_abrir_detalle)
+        # NUEVO: Detectar el clic derecho en un elemento de la lista
+        self.lista.Bind(wx.EVT_LIST_ITEM_RIGHT_CLICK, self.on_click_derecho)
+        
         self.Centre()
 
     def on_buscar(self, event):
-        """
-        NUEVO: Filtra la tabla consultando a la base de datos en tiempo real al escribir.
-        """
         criterio = self.txt_buscar.GetValue()
         self.reparaciones = self.db.buscar_reparaciones(criterio)
         
-        self.lista.DeleteAllItems() # Limpiamos la vista actual
+        self.lista.DeleteAllItems()
         for rep in self.reparaciones:
             self.agregar_reparacion_lista(rep)
 
@@ -80,10 +69,47 @@ class MainFrame(wx.Frame):
         ventana = DetalleReparacionFrame(self, reparacion, indice)
         ventana.Show()
 
+    # NUEVO: Menú contextual al hacer clic derecho
+    def on_click_derecho(self, event):
+        self.indice_seleccionado = event.GetIndex()
+        
+        menu = wx.Menu()
+        item_eliminar = menu.Append(wx.ID_ANY, "Eliminar")
+        self.Bind(wx.EVT_MENU, self.on_eliminar_reparacion, item_eliminar)
+        
+        self.PopupMenu(menu)
+        menu.Destroy()
+
+    # NUEVO: Lógica de eliminación con confirmación
+    def on_eliminar_reparacion(self, event):
+        if not hasattr(self, 'indice_seleccionado'):
+            return
+            
+        reparacion = self.reparaciones[self.indice_seleccionado]
+        
+        # Cartel de confirmación (wx.YES_NO genera los botones Sí y No)
+        respuesta = wx.MessageBox(
+            "¿Estás seguro que deseas eliminar al cliente/equipo? Esta acción no se puede revertir.",
+            "Confirmar eliminación",
+            wx.YES_NO | wx.NO_DEFAULT | wx.ICON_QUESTION
+        )
+        
+        if respuesta == wx.YES:
+            try:
+                # Borramos de SQLite
+                self.db.eliminar_reparacion(reparacion.equipo_id)
+                
+                # Borramos de la lista en memoria
+                del self.reparaciones[self.indice_seleccionado]
+                
+                # Borramos de la pantalla visualmente
+                self.lista.DeleteItem(self.indice_seleccionado)
+                
+                wx.MessageBox("Cliente eliminado con éxito.", "Eliminado", wx.OK | wx.ICON_INFORMATION)
+            except Exception as e:
+                wx.MessageBox(f"Error al eliminar en la base de datos: {e}", "Error", wx.OK | wx.ICON_ERROR)
+
     def crear_menu(self):
-        """
-        Mantenemos la estructura de menús original intacta.
-        """
         barra_menu = wx.MenuBar()
         menu_archivo = wx.Menu()
         
@@ -107,12 +133,9 @@ class MainFrame(wx.Frame):
         if dialog.ShowModal() == wx.ID_OK:
             datos = dialog.obtener_datos()
 
-            # MODIFICADO: Guardamos en SQLite en vez de la memoria temporal.
-            # Como el formulario solo pide 'Cliente' todo junto, lo mandamos a 'nombre' 
-            # y ponemos 'S/D' (Sin Datos) en el DNI porque es obligatorio para la BD.
             try:
                 nueva_rep = self.db.insertar_reparacion(
-                    dni=f"S/D-{datos['cliente'][:3]}", # Parche temporal para que el DNI no choque como duplicado
+                    dni=f"S/D-{datos['cliente'][:3]}",
                     nombre=datos["cliente"], 
                     apellido="", 
                     telefono="", 
@@ -129,10 +152,6 @@ class MainFrame(wx.Frame):
         dialog.Destroy()
 
     def agregar_reparacion_lista(self, reparacion):
-        """
-        REQUISITO LISTCTRL: Función encargada de inyectar los datos en la grilla.
-        """
-        # MODIFICADO: Mantenemos el formato original de mi compañero pero con el ID real de SQLite
         codigo_orden = f"RD-2026-{reparacion.equipo_id:03d}"
 
         indice = self.lista.InsertItem(self.lista.GetItemCount(), codigo_orden)
