@@ -535,7 +535,7 @@ class MainFrame(wx.Frame):
         self.lista.SetItem(
             indice,
             2,
-            reparacion.equipo
+            f"{reparacion.equipo} (Serie: {reparacion.serie})"
         )
 
         estado = reparacion.estado

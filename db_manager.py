@@ -129,8 +129,9 @@ class DatabaseManager:
         cursor = conn.cursor()
         
         try:
-            parametro = f"%{criterio}%"
-            # ACÁ ESTÁ NUESTRA MAGIA: Sumamos e.estado y e.id a la búsqueda
+            parametro = f"%{criterio}%" # Aplica comodines (%) al criterio para permitir búsquedas parciales en los textos.
+            
+                                                       #condiciones OR para filtrar por DNI, apellido, nombre, serie, estado o número de orden
             cursor.execute('''
                 SELECT e.id, c.nombre, c.apellido, e.modelo_marca, e.num_serie, 
                        e.estado, e.falla_reportada, e.diagnostico, e.observaciones, c.dni
@@ -165,7 +166,7 @@ class DatabaseManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        try:
+        try:              # Actualiza el estado, diagnóstico y observaciones de un equipo filtrando directamente por su clave primaria (id).
             cursor.execute('''
                 UPDATE equipos
                 SET estado = ?, diagnostico = ?, observaciones = ?
@@ -173,7 +174,7 @@ class DatabaseManager:
             ''', (estado, diagnostico, observaciones, equipo_id))
             
             conn.commit()
-            return cursor.rowcount > 0
+            return cursor.rowcount > 0                # Retorna True si se modificó al menos un registro, confirmando el éxito de la operación.
             
         except sqlite3.Error as e:
             conn.rollback()
@@ -185,7 +186,7 @@ class DatabaseManager:
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
-        try:
+        try:            # Recupera los datos cruzados de una orden en particular apuntando a un solo ID
             cursor.execute('''
                 SELECT e.id, c.nombre, c.apellido, e.modelo_marca, e.num_serie, 
                        e.estado, e.falla_reportada, e.diagnostico, e.observaciones
@@ -221,7 +222,8 @@ class DatabaseManager:
         cursor = conn.cursor()
         
         try:
-            cursor.execute('DELETE FROM equipos WHERE id = ?', (equipo_id,))
+            cursor.execute('DELETE FROM equipos WHERE id = ?', (equipo_id,))        # Se realiza la eliminación apuntando a la clave primaria (id).
+                                                                                    # Esto evita borrar registros incorrectos en caso de nombres o modelos duplicados.
             conn.commit()
         except sqlite3.Error as e:
             conn.rollback()

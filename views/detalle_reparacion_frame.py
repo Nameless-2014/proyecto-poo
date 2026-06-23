@@ -62,7 +62,7 @@ class DetalleReparacionFrame(wx.Frame):
         self.txt_observaciones.SetValue(reparacion.observaciones)
         sizer.Add(self.txt_observaciones, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
-        # --- BOTONES FUSIONADOS ---
+       
         sizer_botones = wx.BoxSizer(wx.HORIZONTAL)
         
         btn_comprobante = wx.Button(panel, label="Generar Comprobante")
@@ -98,7 +98,7 @@ class DetalleReparacionFrame(wx.Frame):
             self.reparacion.diagnostico = nuevo_diagnostico
             self.reparacion.observaciones = nuevas_observaciones
 
-            # Mantuvimos la lógica visual de emojis que armó tu compañero
+           
             estado_visual = nuevo_estado
 
             if nuevo_estado == "Pendiente":

@@ -1,0 +1,22 @@
+
+=========================================
+          REPAIR DESK - SERVICIO TÉCNICO
+=========================================
+Fecha: 23/06/2026 02:43
+Orden N°: RD-2026-005
+-----------------------------------------
+DATOS DEL CLIENTE
+Cliente: jose 
+-----------------------------------------
+DATOS DEL EQUIPO
+Equipo: lenovo
+N° Serie: 12345678
+Problema: no bootea
+-----------------------------------------
+ESTADO ACTUAL
+Estado: Entregado
+Diagnóstico: S/D
+=========================================
+Conserve este comprobante para retirar
+su equipo. ¡Gracias por confiar en nosotros!
+=========================================
