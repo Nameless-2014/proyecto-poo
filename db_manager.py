@@ -2,7 +2,6 @@ import sqlite3
 from datetime import datetime
 from models.reparacion import Reparacion
 
-# NUEVO: Clase DatabaseManager que centraliza toda la gestión de la base de datos SQLite
 class DatabaseManager:
     """
     Gestiona todas las operaciones con la base de datos SQLite para RepairDesk.
@@ -126,29 +125,20 @@ class DatabaseManager:
             conn.close()
     
     def buscar_reparaciones(self, criterio):
-        """
-        Busca reparaciones por DNI, Apellido, Nombre, Número de Serie, Estado o Número de Orden.
-        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         try:
             parametro = f"%{criterio}%"
-            
-            # Agregamos OR e.estado LIKE ? y OR e.id LIKE ? para incluir estado y orden en el filtro
+            # ACÁ ESTÁ NUESTRA MAGIA: Sumamos e.estado y e.id a la búsqueda
             cursor.execute('''
                 SELECT e.id, c.nombre, c.apellido, e.modelo_marca, e.num_serie, 
                        e.estado, e.falla_reportada, e.diagnostico, e.observaciones, c.dni
                 FROM equipos e
                 JOIN clientes c ON e.cliente_id = c.id
-                WHERE c.dni LIKE ? 
-                   OR c.apellido LIKE ? 
-                   OR c.nombre LIKE ? 
-                   OR e.num_serie LIKE ?
-                   OR e.estado LIKE ?
-                   OR e.id LIKE ?
+                WHERE c.dni LIKE ? OR c.apellido LIKE ? OR c.nombre LIKE ? OR e.num_serie LIKE ? OR e.estado LIKE ? OR e.id LIKE ?
                 ORDER BY e.fecha_ingreso DESC
-            ''', (parametro, parametro, parametro, parametro, parametro, parametro)) # Ahora son 6 parámetros
+            ''', (parametro, parametro, parametro, parametro, parametro, parametro)) # 6 parámetros
             
             resultados = cursor.fetchall()
             reparaciones = []
@@ -223,7 +213,6 @@ class DatabaseManager:
         finally:
             conn.close()
 
-    # NUEVO METODO PARA ELIMINAR
     def eliminar_reparacion(self, equipo_id):
         """
         Elimina un registro de reparación específico de la base de datos.

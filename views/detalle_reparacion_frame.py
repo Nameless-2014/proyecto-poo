@@ -62,7 +62,7 @@ class DetalleReparacionFrame(wx.Frame):
         self.txt_observaciones.SetValue(reparacion.observaciones)
         sizer.Add(self.txt_observaciones, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
-        # --- NUEVO: Modificamos los botones de abajo para que entren los dos ---
+        # --- BOTONES FUSIONADOS ---
         sizer_botones = wx.BoxSizer(wx.HORIZONTAL)
         
         btn_comprobante = wx.Button(panel, label="Generar Comprobante")
@@ -75,7 +75,6 @@ class DetalleReparacionFrame(wx.Frame):
         sizer_botones.Add(btn_guardar, 0, wx.LEFT, 0)
 
         sizer.Add(sizer_botones, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
-        # -----------------------------------------------------------------------
 
         panel.SetSizer(sizer)
 
@@ -99,16 +98,32 @@ class DetalleReparacionFrame(wx.Frame):
             self.reparacion.diagnostico = nuevo_diagnostico
             self.reparacion.observaciones = nuevas_observaciones
 
-            self.main_frame.lista.SetItem(self.indice, 3, self.reparacion.estado)
+            # Mantuvimos la lógica visual de emojis que armó tu compañero
+            estado_visual = nuevo_estado
+
+            if nuevo_estado == "Pendiente":
+                estado_visual = "⏳ Pendiente"
+            elif nuevo_estado == "En diagnóstico":
+                estado_visual = "🔍 En diagnóstico"
+            elif nuevo_estado == "Reparando":
+                estado_visual = "🔧 Reparando"
+            elif nuevo_estado == "Finalizado":
+                estado_visual = "✅ Finalizado"
+            elif nuevo_estado == "Entregado":
+                estado_visual = "📦 Entregado"
+
+            self.main_frame.lista.SetItem(
+                self.indice,
+                3,
+                estado_visual
+            )
 
             wx.MessageBox("Cambios guardados correctamente en la base de datos.", "RepairDesk", wx.OK | wx.ICON_INFORMATION)
-            
             self.Close()
 
         except Exception as e:
             wx.MessageBox(f"Error al guardar en la base de datos: {e}", "Error", wx.OK | wx.ICON_ERROR)
 
-    # --- NUEVO: Función para armar y abrir el bloc de notas ---
     def on_generar_comprobante(self, event):
         """
         Genera un comprobante en formato .txt y lo abre automáticamente.
@@ -116,7 +131,6 @@ class DetalleReparacionFrame(wx.Frame):
         codigo_orden = f"RD-2026-{self.reparacion.equipo_id:03d}"
         fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
 
-        # Armamos el diseño visual del ticket de texto plano
         ticket = f"""
 =========================================
           REPAIR DESK - SERVICIO TÉCNICO
@@ -143,12 +157,8 @@ su equipo. ¡Gracias por confiar en nosotros!
         nombre_archivo = f"Comprobante_{codigo_orden}.txt"
 
         try:
-            # Creamos y escribimos el archivo .txt en la carpeta del proyecto
             with open(nombre_archivo, "w", encoding="utf-8") as file:
                 file.write(ticket)
-
-            # Le pedimos a Windows que abra el archivo generado
             os.startfile(nombre_archivo)
-
         except Exception as e:
             wx.MessageBox(f"Error al generar el comprobante: {e}", "Error", wx.OK | wx.ICON_ERROR)
