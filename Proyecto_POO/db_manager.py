@@ -126,19 +126,29 @@ class DatabaseManager:
             conn.close()
     
     def buscar_reparaciones(self, criterio):
+        """
+        Busca reparaciones por DNI, Apellido, Nombre, Número de Serie, Estado o Número de Orden.
+        """
         conn = sqlite3.connect(self.db_path)
         cursor = conn.cursor()
         
         try:
             parametro = f"%{criterio}%"
+            
+            # Agregamos OR e.estado LIKE ? y OR e.id LIKE ? para incluir estado y orden en el filtro
             cursor.execute('''
                 SELECT e.id, c.nombre, c.apellido, e.modelo_marca, e.num_serie, 
                        e.estado, e.falla_reportada, e.diagnostico, e.observaciones, c.dni
                 FROM equipos e
                 JOIN clientes c ON e.cliente_id = c.id
-                WHERE c.dni LIKE ? OR c.apellido LIKE ? OR c.nombre LIKE ? OR e.num_serie LIKE ?
+                WHERE c.dni LIKE ? 
+                   OR c.apellido LIKE ? 
+                   OR c.nombre LIKE ? 
+                   OR e.num_serie LIKE ?
+                   OR e.estado LIKE ?
+                   OR e.id LIKE ?
                 ORDER BY e.fecha_ingreso DESC
-            ''', (parametro, parametro, parametro, parametro))
+            ''', (parametro, parametro, parametro, parametro, parametro, parametro)) # Ahora son 6 parámetros
             
             resultados = cursor.fetchall()
             reparaciones = []

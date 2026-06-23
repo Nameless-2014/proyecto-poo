@@ -1,0 +1,22 @@
+
+=========================================
+          REPAIR DESK - SERVICIO TÉCNICO
+=========================================
+Fecha: 23/06/2026 01:02
+Orden N°: RD-2026-004
+-----------------------------------------
+DATOS DEL CLIENTE
+Cliente: pedro porro 
+-----------------------------------------
+DATOS DEL EQUIPO
+Equipo: asus
+N° Serie: 1234
+Problema: no anda
+-----------------------------------------
+ESTADO ACTUAL
+Estado: Reparando
+Diagnóstico: abcd
+=========================================
+Conserve este comprobante para retirar
+su equipo. ¡Gracias por confiar en nosotros!
+=========================================

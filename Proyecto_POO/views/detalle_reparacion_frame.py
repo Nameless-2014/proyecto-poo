@@ -1,4 +1,6 @@
 import wx
+import os
+from datetime import datetime
 
 class DetalleReparacionFrame(wx.Frame):
     """
@@ -11,8 +13,6 @@ class DetalleReparacionFrame(wx.Frame):
         reparacion,
         indice
     ):
-        # MODIFICADO: Generamos el código de orden visual usando el ID real de la base de datos
-        # Así mantenemos el formato original (Ej: RD-2026-001)
         codigo_orden = f"RD-2026-{reparacion.equipo_id:03d}"
 
         super().__init__(
@@ -34,7 +34,6 @@ class DetalleReparacionFrame(wx.Frame):
 
         sizer.Add(titulo, 0, wx.ALL, 10)
 
-        # MODIFICADO: Actualizamos la etiqueta para mostrar el nuevo código de orden
         sizer.Add(wx.StaticText(panel, label=f"Orden: {codigo_orden}"), 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         sizer.Add(wx.StaticText(panel, label=f"Cliente: {reparacion.cliente}"), 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
         sizer.Add(wx.StaticText(panel, label=f"Equipo: {reparacion.equipo}"), 0, wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
@@ -63,9 +62,20 @@ class DetalleReparacionFrame(wx.Frame):
         self.txt_observaciones.SetValue(reparacion.observaciones)
         sizer.Add(self.txt_observaciones, 1, wx.EXPAND | wx.LEFT | wx.RIGHT | wx.BOTTOM, 10)
 
+        # --- NUEVO: Modificamos los botones de abajo para que entren los dos ---
+        sizer_botones = wx.BoxSizer(wx.HORIZONTAL)
+        
+        btn_comprobante = wx.Button(panel, label="Generar Comprobante")
+        btn_comprobante.Bind(wx.EVT_BUTTON, self.on_generar_comprobante)
+        
         btn_guardar = wx.Button(panel, label="Guardar cambios")
         btn_guardar.Bind(wx.EVT_BUTTON, self.on_guardar)
-        sizer.Add(btn_guardar, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+        
+        sizer_botones.Add(btn_comprobante, 0, wx.RIGHT, 10)
+        sizer_botones.Add(btn_guardar, 0, wx.LEFT, 0)
+
+        sizer.Add(sizer_botones, 0, wx.ALIGN_RIGHT | wx.ALL, 10)
+        # -----------------------------------------------------------------------
 
         panel.SetSizer(sizer)
 
@@ -78,7 +88,6 @@ class DetalleReparacionFrame(wx.Frame):
         nuevas_observaciones = self.txt_observaciones.GetValue()
 
         try:
-            # NUEVO: Le pedimos a la conexión de base de datos que ya tenemos en MainFrame que haga el UPDATE
             self.main_frame.db.actualizar_reparacion(
                 self.reparacion.equipo_id,
                 nuevo_estado,
@@ -86,19 +95,60 @@ class DetalleReparacionFrame(wx.Frame):
                 nuevas_observaciones
             )
 
-            # Si SQLite guardó bien, actualizamos el objeto en memoria para que la tabla principal no quede desfasada
             self.reparacion.estado = nuevo_estado
             self.reparacion.diagnostico = nuevo_diagnostico
             self.reparacion.observaciones = nuevas_observaciones
 
-            # Actualizamos visualmente el ListCtrl de la ventana principal
             self.main_frame.lista.SetItem(self.indice, 3, self.reparacion.estado)
 
             wx.MessageBox("Cambios guardados correctamente en la base de datos.", "RepairDesk", wx.OK | wx.ICON_INFORMATION)
             
-            # MODIFICADO: Cerramos la ventana automáticamente después de guardar para que sea más cómodo
             self.Close()
 
         except Exception as e:
-            # En caso de que falle la escritura en el archivo local de la DB
             wx.MessageBox(f"Error al guardar en la base de datos: {e}", "Error", wx.OK | wx.ICON_ERROR)
+
+    # --- NUEVO: Función para armar y abrir el bloc de notas ---
+    def on_generar_comprobante(self, event):
+        """
+        Genera un comprobante en formato .txt y lo abre automáticamente.
+        """
+        codigo_orden = f"RD-2026-{self.reparacion.equipo_id:03d}"
+        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+
+        # Armamos el diseño visual del ticket de texto plano
+        ticket = f"""
+=========================================
+          REPAIR DESK - SERVICIO TÉCNICO
+=========================================
+Fecha: {fecha_actual}
+Orden N°: {codigo_orden}
+-----------------------------------------
+DATOS DEL CLIENTE
+Cliente: {self.reparacion.cliente}
+-----------------------------------------
+DATOS DEL EQUIPO
+Equipo: {self.reparacion.equipo}
+N° Serie: {self.reparacion.serie}
+Problema: {self.reparacion.problema}
+-----------------------------------------
+ESTADO ACTUAL
+Estado: {self.cmb_estado.GetValue()}
+Diagnóstico: {self.txt_diagnostico.GetValue() if self.txt_diagnostico.GetValue() else 'S/D'}
+=========================================
+Conserve este comprobante para retirar
+su equipo. ¡Gracias por confiar en nosotros!
+=========================================
+"""
+        nombre_archivo = f"Comprobante_{codigo_orden}.txt"
+
+        try:
+            # Creamos y escribimos el archivo .txt en la carpeta del proyecto
+            with open(nombre_archivo, "w", encoding="utf-8") as file:
+                file.write(ticket)
+
+            # Le pedimos a Windows que abra el archivo generado
+            os.startfile(nombre_archivo)
+
+        except Exception as e:
+            wx.MessageBox(f"Error al generar el comprobante: {e}", "Error", wx.OK | wx.ICON_ERROR)
