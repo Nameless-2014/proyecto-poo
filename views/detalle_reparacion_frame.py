@@ -1,6 +1,8 @@
 import wx
 import os
 from datetime import datetime
+# Importamos la nueva clase que creamos para imprimir
+from views.print_comprobante import ComprobantePrintout
 
 class DetalleReparacionFrame(wx.Frame):
     """
@@ -126,39 +128,28 @@ class DetalleReparacionFrame(wx.Frame):
 
     def on_generar_comprobante(self, event):
         """
-        Genera un comprobante en formato .txt y lo abre automáticamente.
+        Genera el comprobante usando wx.Printout y wx.DC
         """
-        codigo_orden = f"RD-2026-{self.reparacion.equipo_id:03d}"
-        fecha_actual = datetime.now().strftime("%d/%m/%Y %H:%M")
+        # Capturamos los textos actuales de la pantalla
+        estado_actual = self.cmb_estado.GetValue()
+        diagnostico_actual = self.txt_diagnostico.GetValue().strip() if self.txt_diagnostico.GetValue() else 'S/D'
 
-        ticket = f"""
-=========================================
-          REPAIR DESK - SERVICIO TÉCNICO
-=========================================
-Fecha: {fecha_actual}
-Orden N°: {codigo_orden}
------------------------------------------
-DATOS DEL CLIENTE
-Cliente: {self.reparacion.cliente}
------------------------------------------
-DATOS DEL EQUIPO
-Equipo: {self.reparacion.equipo}
-N° Serie: {self.reparacion.serie}
-Problema: {self.reparacion.problema}
------------------------------------------
-ESTADO ACTUAL
-Estado: {self.cmb_estado.GetValue()}
-Diagnóstico: {self.txt_diagnostico.GetValue() if self.txt_diagnostico.GetValue() else 'S/D'}
-=========================================
-Conserve este comprobante para retirar
-su equipo. ¡Gracias por confiar en nosotros!
-=========================================
-"""
-        nombre_archivo = f"Comprobante_{codigo_orden}.txt"
-
-        try:
-            with open(nombre_archivo, "w", encoding="utf-8") as file:
-                file.write(ticket)
-            os.startfile(nombre_archivo)
-        except Exception as e:
-            wx.MessageBox(f"Error al generar el comprobante: {e}", "Error", wx.OK | wx.ICON_ERROR)
+        # Instanciamos nuestra clase dibujante pasándole los datos
+        printout = ComprobantePrintout(self.reparacion, estado_actual, diagnostico_actual)
+        
+        # Configuramos los datos del diálogo (Hoja A4 por defecto)
+        print_data = wx.PrintData()
+        print_data.SetPaperId(wx.PAPER_A4)
+        dialog_data = wx.PrintDialogData(print_data)
+        
+        # Instanciamos la impresora nativa de wx
+        printer = wx.Printer(dialog_data)
+        
+        # Mandamos a imprimir (prompt=True abre el cuadro de diálogo para elegir impresora)
+        if not printer.Print(self, printout, prompt=True):
+            # Si entra acá, puede ser un error o que el usuario le dio a "Cancelar"
+            if wx.Printer.GetLastError() == wx.PRINTER_ERROR:
+                wx.MessageBox("Hubo un error técnico al intentar imprimir.", "Error de Impresión", wx.OK | wx.ICON_ERROR)
+        
+        # destruir el printout de la memoria cuando termina
+        printout.Destroy()

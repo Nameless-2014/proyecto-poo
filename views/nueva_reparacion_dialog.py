@@ -14,13 +14,16 @@ class NuevaReparacionDialog(wx.Dialog):
 
         panel = wx.Panel(self)
         sizer_principal = wx.BoxSizer(wx.VERTICAL)
-
+        self.txt_dni = wx.TextCtrl(panel)
         self.txt_cliente = wx.TextCtrl(panel)
         self.txt_equipo = wx.TextCtrl(panel)
         self.txt_serie = wx.TextCtrl(panel)
         self.txt_problema = wx.TextCtrl(panel, style=wx.TE_MULTILINE)
 
-        formulario = wx.FlexGridSizer(rows=4, cols=2, vgap=10, hgap=10)
+        formulario = wx.FlexGridSizer(rows=5, cols=2, vgap=10, hgap=10)
+
+        formulario.Add(wx.StaticText(panel, label="DNI:"), 0, wx.ALIGN_CENTER_VERTICAL)
+        formulario.Add(self.txt_dni, 1, wx.EXPAND)
 
         formulario.Add(wx.StaticText(panel, label="Cliente:"), 0, wx.ALIGN_CENTER_VERTICAL)
         formulario.Add(self.txt_cliente, 1, wx.EXPAND)
@@ -57,13 +60,14 @@ class NuevaReparacionDialog(wx.Dialog):
         """
         Valida que los campos no estén vacíos antes de guardar.
         """
+        dni = self.txt_dni.GetValue().strip()
         cliente = self.txt_cliente.GetValue().strip()
         equipo = self.txt_equipo.GetValue().strip()
         serie = self.txt_serie.GetValue().strip()
         problema = self.txt_problema.GetValue().strip()
 
         # Validación estricta
-        if not cliente or not equipo or not serie or not problema:
+        if not dni or not cliente or not equipo or not serie or not problema:
             wx.MessageBox(
                 "Hay campos sin completar. Debe rellenar todos los campos antes de guardar.", 
                 "Error de validación", 
@@ -79,6 +83,7 @@ class NuevaReparacionDialog(wx.Dialog):
         Devuelve los datos limpios de espacios en blanco a los costados.
         """
         return {
+            "dni": self.txt_dni.GetValue().strip(),
             "cliente": self.txt_cliente.GetValue().strip(),
             "equipo": self.txt_equipo.GetValue().strip(),
             "serie": self.txt_serie.GetValue().strip(),

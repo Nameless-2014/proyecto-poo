@@ -167,7 +167,7 @@ class MainFrame(wx.Frame):
         )
 
         self.txt_buscar.SetDescriptiveText(
-            "Buscar cliente, equipo o número de serie..."
+            "Buscar DNI, cliente, equipo o número de serie..."
         )
 
         self.txt_buscar.SetMinSize(
@@ -484,7 +484,7 @@ class MainFrame(wx.Frame):
 
                 nueva_rep = (
                     self.db.insertar_reparacion(
-                        dni=f"S/D-{datos['cliente'][:3]}",
+                        dni=datos["dni"],
                         nombre=datos["cliente"],
                         apellido="",
                         telefono="",
