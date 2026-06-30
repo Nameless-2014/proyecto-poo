@@ -137,9 +137,14 @@ class DetalleReparacionFrame(wx.Frame):
         # Instanciamos nuestra clase dibujante pasándole los datos
         printout = ComprobantePrintout(self.reparacion, estado_actual, diagnostico_actual)
         
+        #le da un nombre por defecto a los comprobantes generados
+        codigo = f"RD-2026-{self.reparacion.equipo_id:03d}"
+        nombre_sugerido = f"Comprobante_{codigo}.pdf"
+        
         # Configuramos los datos del diálogo (Hoja A4 por defecto)
         print_data = wx.PrintData()
         print_data.SetPaperId(wx.PAPER_A4)
+        print_data.SetFilename(nombre_sugerido)#################################################### test
         dialog_data = wx.PrintDialogData(print_data)
         
         # Instanciamos la impresora nativa de wx

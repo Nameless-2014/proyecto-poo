@@ -17,6 +17,13 @@ class ComprobantePrintout(wx.Printout):
         Este método es llamado por el sistema para dibujar la página.
         """
         dc = self.GetDC()
+
+        #corrige la escala porque se veia muy chiquito el comprobante al imprimirlo como PDF
+        ppi_pantalla = self.GetPPIScreen()
+        ppi_impresora = self.GetPPIPrinter()
+        escala_x = ppi_impresora[0] / ppi_pantalla[0]
+        escala_y = ppi_impresora[1] / ppi_pantalla[1]
+        dc.SetUserScale(escala_x, escala_y)
         
         # Configurar las fuentes que vamos a usar como "pinceles"
         fuente_titulo = wx.Font(16, wx.FONTFAMILY_DEFAULT, wx.FONTSTYLE_NORMAL, wx.FONTWEIGHT_BOLD)
